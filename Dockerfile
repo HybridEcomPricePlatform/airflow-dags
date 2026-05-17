@@ -10,6 +10,3 @@ WORKDIR /opt/airflow
 # On installe UNIQUEMENT les dépendances
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
-
-# SUPPRIMEZ les lignes COPY dags/ et COPY config/
-# Elles seront gérées par le volume dans docker-compose
