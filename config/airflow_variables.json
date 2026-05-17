@@ -1,0 +1,8 @@
+{
+    "KAFKA_BROKER": "kafka:9092",
+    "KAFKA_TOPIC": "price_events",
+    "MONGO_URI": "mongodb://mongo:27017/",
+    "MONGO_DATABASE": "price_db",
+    "GOOGLE_CLOUD_PROJECT": "price-intel-prod",
+    "GCS_BUCKET": "price-raw-data-price-intel-prod"
+}

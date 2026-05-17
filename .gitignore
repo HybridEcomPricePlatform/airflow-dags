@@ -1,19 +1,21 @@
-# Credentials 
-.env 
-price-key.json 
-  
-# Python 
-__pycache__/ 
-*.pyc 
-.venv/ 
-  
-# Airflow runtime files — never commit these 
-logs/ 
-airflow.db 
-airflow.cfg 
-webserver_config.py 
-  
-# OS 
-.DS_Store 
-Thumbs.db 
+# Credentials
+.env
+price-key.json
+config/gcp-key.json
+*.json
+!config/airflow_variables.json
 
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Airflow runtime files
+logs/
+airflow.db
+airflow.cfg
+webserver_config.py
+
+# OS
+.DS_Store
+Thumbs.db
