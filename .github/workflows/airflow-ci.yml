@@ -1,0 +1,117 @@
+
+# =============================================================================
+# Airflow CI Pipeline — Price Intelligence Platform
+#
+# Jobs:
+#   1. validate-dags    — vérifie que les DAGs s'importent sans erreur
+#   2. lint-python      — vérifie la qualité du code Python des DAGs
+#
+# Triggers: push et pull_request sur main
+# =============================================================================
+
+name: Airflow CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Job 1: Validate DAG imports
+  # ---------------------------------------------------------------------------
+  validate-dags:
+    name: Validate DAG Imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Airflow
+        run: |
+          pip install apache-airflow==2.7.1 \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.11.txt"
+
+      - name: Install DAG dependencies
+        run: |
+          pip install \
+            pymongo==4.6.0 \
+            google-cloud-bigtable==2.21.0 \
+            google-cloud-storage==2.13.0 \
+            google-cloud-bigquery==3.13.0 \
+            confluent-kafka==2.3.0 \
+            python-dotenv==1.0.0
+
+      - name: Check DAG imports
+        run: |
+          export AIRFLOW_HOME=/tmp/airflow
+          export AIRFLOW__CORE__DAGS_FOLDER=$PWD/dags
+          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////tmp/airflow/airflow.db
+          export AIRFLOW__CORE__LOAD_EXAMPLES=false
+          airflow db init
+          python -c "
+          import os, sys
+          from airflow.models import DagBag
+
+          dag_folder = 'dags'
+          if not os.path.exists(dag_folder):
+              print('ERROR: dags/ folder not found')
+              sys.exit(1)
+
+          dagbag = DagBag(dag_folder=dag_folder, include_examples=False)
+
+          if dagbag.import_errors:
+              print('DAG import errors:')
+              for dag_file, error in dagbag.import_errors.items():
+                  print(f'  ERROR: {dag_file}: {error}')
+              sys.exit(1)
+
+          print(f'✔ {len(dagbag.dags)} DAGs imported successfully:')
+          for dag_id in dagbag.dags:
+              print(f'  - {dag_id}')
+          "
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Lint Python
+  # ---------------------------------------------------------------------------
+  lint-python:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Lint DAGs
+        run: |
+          flake8 dags/ \
+            --count \
+            --select=E9,F63,F7,F82 \
+            --show-source \
+            --statistics
+          echo "✔ DAGs lint passed"
+
+      - name: Lint scripts
+        run: |
+          if [ -d "scripts/" ]; then
+            flake8 scripts/ \
+              --count \
+              --select=E9,F63,F7,F82 \
+              --show-source \
+              --statistics
+            echo "✔ Scripts lint passed"
+          else
+            echo "INFO: No scripts/ folder found - skipped"
+          fi
