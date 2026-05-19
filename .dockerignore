@@ -1,0 +1,31 @@
+# Credentials
+.env
+*.json
+!config/airflow_variables.json
+price-key.json
+config/gcp-key.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Airflow runtime
+logs/
+airflow.db
+airflow.cfg
+
+# Git
+.git/
+.gitignore
+.github/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+*.md
+README*
