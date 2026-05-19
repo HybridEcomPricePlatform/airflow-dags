@@ -19,9 +19,9 @@ on:
 
 jobs:
 
-  # ---------------------------------------------------------------------------
+
   # Job 1: Validate DAG imports
-  # ---------------------------------------------------------------------------
+
   validate-dags:
     name: Validate DAG Imports
     runs-on: ubuntu-latest
@@ -38,9 +38,11 @@ jobs:
           pip install apache-airflow==2.7.1 \
             --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.11.txt"
 
+
       - name: Install DAG dependencies
         run: |
           pip install \
+            apache-airflow-providers-mongo==3.3.0 \
             pymongo==4.6.0 \
             google-cloud-bigtable==2.21.0 \
             google-cloud-storage==2.13.0 \
@@ -77,9 +79,9 @@ jobs:
               print(f'  - {dag_id}')
           "
 
-  # ---------------------------------------------------------------------------
-  # Job 2: Lint Python
-  # ---------------------------------------------------------------------------
+
+          # Job 2: Lint Python
+
   lint-python:
     name: Lint Python Code
     runs-on: ubuntu-latest
