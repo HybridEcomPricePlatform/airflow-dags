@@ -1,5 +1,3 @@
-
-# =============================================================================
 # Airflow CI Pipeline — Price Intelligence Platform
 #
 # Jobs:
@@ -7,7 +5,7 @@
 #   2. lint-python      — vérifie la qualité du code Python des DAGs
 #
 # Triggers: push et pull_request sur main
-# =============================================================================
+
 
 name: Airflow CI
 
@@ -19,14 +17,18 @@ on:
 
 jobs:
 
-
   # Job 1: Validate DAG imports
-
   validate-dags:
     name: Validate DAG Imports
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Checkout scrapers repo
+        uses: actions/checkout@v4
+        with:
+          repository: HybridEcomPricePlatform-Org/scrapers
+          path: scrapers_repo
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -38,11 +40,11 @@ jobs:
           pip install apache-airflow==2.7.1 \
             --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.11.txt"
 
-
       - name: Install DAG dependencies
         run: |
           pip install \
             apache-airflow-providers-mongo==3.3.0 \
+            apache-airflow-providers-google==10.12.0 \
             pymongo==4.6.0 \
             google-cloud-bigtable==2.21.0 \
             google-cloud-storage==2.13.0 \
@@ -56,6 +58,7 @@ jobs:
           export AIRFLOW__CORE__DAGS_FOLDER=$PWD/dags
           export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////tmp/airflow/airflow.db
           export AIRFLOW__CORE__LOAD_EXAMPLES=false
+          export PYTHONPATH=$PWD/scrapers_repo/..
           airflow db init
           python -c "
           import os, sys
@@ -79,9 +82,7 @@ jobs:
               print(f'  - {dag_id}')
           "
 
-
-          # Job 2: Lint Python
-
+  # Job 2: Lint Python
   lint-python:
     name: Lint Python Code
     runs-on: ubuntu-latest
