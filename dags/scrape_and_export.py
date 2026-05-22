@@ -1,13 +1,11 @@
 import sys
+import os
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
 from airflow.providers.http.sensors.http import HttpSensor
 
-# Add the project directory to sys.path to be able to import the utility
-sys.path.append('/home/sara/price-intelligence')
-from scrapers.utils.export_to_gcs import export_recent_files
+PRICE_INTEL_HOME = os.getenv('PRICE_INTEL_HOME', '/home/sara/price-intelligence')
 
 default_args = {
     'owner': 'data-team',
@@ -29,17 +27,20 @@ with DAG(
 
     scrape_jumia = BashOperator(
         task_id='scrape_jumia',
-        bash_command='cd /home/sara/price-intelligence && scrapy crawl jumia -s CLOSESPIDER_ITEMCOUNT=500',
+        bash_command='cd $PRICE_INTEL_HOME && scrapy crawl jumia -s CLOSESPIDER_ITEMCOUNT=500',
+        env={'PRICE_INTEL_HOME': PRICE_INTEL_HOME},
     )
 
     scrape_ep = BashOperator(
         task_id='scrape_ep',
-        bash_command='cd /home/sara/price-intelligence && scrapy crawl electroplanet -s CLOSESPIDER_ITEMCOUNT=200',
+        bash_command='cd $PRICE_INTEL_HOME && scrapy crawl electroplanet -s CLOSESPIDER_ITEMCOUNT=200',
+        env={'PRICE_INTEL_HOME': PRICE_INTEL_HOME},
     )
 
-    export_to_gcs = PythonOperator(
+    export_to_gcs = BashOperator(
         task_id='export_to_gcs',
-        python_callable=export_recent_files,
+        bash_command='cd $PRICE_INTEL_HOME && python3 scrapers/utils/export_to_gcs.py',
+        env={'PRICE_INTEL_HOME': PRICE_INTEL_HOME},
     )
 
     wait_nifi_completion = HttpSensor(

@@ -6,6 +6,8 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.providers.google.cloud.hooks.bigtable import BigtableHook
 
+PRICE_INTEL_HOME = os.getenv('PRICE_INTEL_HOME', '/home/sara/price-intelligence')
+
 default_args = {
     'owner': 'data-team',
     'depends_on_past': False,
