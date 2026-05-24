@@ -27,13 +27,13 @@ with DAG(
 
     scrape_jumia = BashOperator(
         task_id='scrape_jumia',
-        bash_command='cd $PRICE_INTEL_HOME && scrapy crawl jumia -s CLOSESPIDER_ITEMCOUNT=500',
+        bash_command='cd $PRICE_INTEL_HOME/scrapers && ~/.local/bin/scrapy crawl jumia -s CLOSESPIDER_ITEMCOUNT=500',
         env={'PRICE_INTEL_HOME': PRICE_INTEL_HOME},
     )
 
     scrape_ep = BashOperator(
         task_id='scrape_ep',
-        bash_command='cd $PRICE_INTEL_HOME && scrapy crawl electroplanet -s CLOSESPIDER_ITEMCOUNT=200',
+        bash_command='cd $PRICE_INTEL_HOME/scrapers && ~/.local/bin/scrapy crawl electroplanet -s CLOSESPIDER_ITEMCOUNT=200',
         env={'PRICE_INTEL_HOME': PRICE_INTEL_HOME},
     )
 
