@@ -5,9 +5,10 @@ from airflow.operators.bash import BashOperator
 from airflow.providers.http.sensors.http import HttpSensor
 
 PRICE_INTEL_HOME = os.getenv('PRICE_INTEL_HOME', '/home/sara/price-intelligence')
+WSL_HOST = '172.30.148.175'
+WSL_USER = 'sara'
+SSH_KEY = '/home/airflow/.ssh/airflow_rsa'
 
-# Variables d'env héritées du container — passées explicitement parce que
-# env= dans BashOperator remplace os.environ au lieu de le compléter.
 SHARED_ENV = {
     'PRICE_INTEL_HOME': PRICE_INTEL_HOME,
     'PYTHONPATH': PRICE_INTEL_HOME,
@@ -53,13 +54,21 @@ with DAG(
         env=SHARED_ENV,
     )
 
+    # Electroplanet est protégé par Cloudflare — headless Docker est bloqué.
+    # On lance le spider via SSH sur l'hôte WSL où --headless=old passe Cloudflare.
     scrape_ep = BashOperator(
         task_id='scrape_ep',
         bash_command=(
-            'cd $PRICE_INTEL_HOME && '
-            '~/.local/bin/scrapy crawl electroplanet '
-            '-s CLOSESPIDER_ITEMCOUNT=200 '
-            '--set=SCRAPY_SETTINGS_MODULE=scrapers.settings'
+            f'ssh -i {SSH_KEY} '
+            f'-o StrictHostKeyChecking=no -T '
+            f'{WSL_USER}@{WSL_HOST} '
+            f'"cd ~/price-intelligence && '
+            f'MONGO_HOST=localhost '
+            f'KAFKA_BOOTSTRAP_SERVERS=localhost:9092 '
+            f'SCRAPY_FEED_DIR=/home/sara/price-intelligence/storage '
+            f'venv/bin/scrapy crawl electroplanet '
+            f'-s CLOSESPIDER_ITEMCOUNT=200 '
+            f'--set=SCRAPY_SETTINGS_MODULE=scrapers.settings"'
         ),
         env=SHARED_ENV,
     )
