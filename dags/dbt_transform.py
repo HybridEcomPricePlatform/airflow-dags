@@ -4,6 +4,10 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
+WSL_HOST = os.getenv('WSL_HOST', '172.30.148.175')
+WSL_USER = 'sara'
+SSH_KEY = '/home/airflow/.ssh/airflow_rsa'
+
 default_args = {
     'owner': 'data-team',
     'depends_on_past': False,
@@ -22,23 +26,28 @@ with DAG(
     tags=['transformation', 'dbt', 'bigquery'],
 ) as dag:
 
-    # Wait for the scrape_and_export DAG to finish its export_to_gcs task
     wait_for_scraping = ExternalTaskSensor(
         task_id='wait_for_scraping',
         external_dag_id='scrape_and_export',
         external_task_id='export_to_gcs',
         allowed_states=['success'],
         failed_states=['failed', 'skipped'],
-        mode='poke',
+        mode='reschedule',
         poke_interval=60,
         timeout=3600,
     )
 
-    # We install dbt-bigquery quickly on the fly and run dbt
-    # using the profiles.yml located in the dbt_price directory
+    # dbt runs via SSH on WSL host where credentials and venv are available
     run_dbt = BashOperator(
         task_id='run_dbt',
-        bash_command='pip install --user dbt-bigquery && cd /home/sara/price-intelligence/dbt_price && ~/.local/bin/dbt run --profiles-dir .',
+        bash_command=(
+            f'ssh -i {SSH_KEY} '
+            f'-o StrictHostKeyChecking=no -T '
+            f'{WSL_USER}@{WSL_HOST} '
+            f'"cd ~/price-intelligence/dbt_price && '
+            f'source ~/price-intelligence/venv/bin/activate && '
+            f'dbt run --profiles-dir . 2>&1"'
+        ),
     )
 
     wait_for_scraping >> run_dbt
