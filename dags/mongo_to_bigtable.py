@@ -47,8 +47,10 @@ def write_bigtable(**context):
         documents = json.load(f)
         
     hook = BigtableHook(gcp_conn_id='google_cloud_default')
-    client = hook.get_client(project='price-intel-prod')
-    instance = client.instance('price-intelligence')
+    instance = hook.get_instance(
+        project_id='price-intel-prod',
+        instance_id='price-intelligence'
+    )
     table = instance.table('product_prices')
     
     rows = []
