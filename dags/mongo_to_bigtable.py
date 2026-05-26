@@ -79,8 +79,13 @@ def write_bigtable(**context):
         rows.append(row)
         
     # Write events batch
-    status = table.mutate_rows(rows)
-    success_count = sum(1 for s in status if s.code == 0)
+    BATCH_SIZE = 500
+    success_count = 0
+    for i in range(0, len(rows), BATCH_SIZE):
+        batch = rows[i:i + BATCH_SIZE]
+        status = table.mutate_rows(batch)
+        success_count += sum(1 for s in status if s.code == 0)
+        print(f"Batch {i//BATCH_SIZE + 1}: {success_count} rows written so far")
     
     ti.xcom_push(key='bigtable_count', value=success_count)
 
