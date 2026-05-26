@@ -23,7 +23,10 @@ def read_mongo(**context):
     db = client.get_database(os.getenv('MONGO_DATABASE', 'price_db'))
     collection = db.get_collection(os.getenv('MONGO_COLLECTION', 'price_events'))
     
-    documents = list(collection.find({}, {'_id': 0}))
+    documents = list(collection.find(
+    {'scraped_at': {'$gte': '2026-05-01'}},
+    {'_id': 0}
+))
     
     # Save documents locally to avoid XCom size limits
     temp_file = '/tmp/mongo_export.json'
