@@ -6,6 +6,8 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.providers.google.cloud.hooks.bigtable import BigtableHook
 
+PRICE_INTEL_HOME = os.getenv('PRICE_INTEL_HOME', '/home/sara/price-intelligence')
+
 default_args = {
     'owner': 'data-team',
     'depends_on_past': False,
@@ -21,7 +23,10 @@ def read_mongo(**context):
     db = client.get_database(os.getenv('MONGO_DATABASE', 'price_db'))
     collection = db.get_collection(os.getenv('MONGO_COLLECTION', 'price_events'))
     
-    documents = list(collection.find({}, {'_id': 0}))
+    documents = list(collection.find(
+    {'scraped_at': {'$gte': '2026-05-01'}},
+    {'_id': 0}
+))
     
     # Save documents locally to avoid XCom size limits
     temp_file = '/tmp/mongo_export.json'
@@ -41,13 +46,11 @@ def write_bigtable(**context):
     with open(temp_file, 'r') as f:
         documents = json.load(f)
         
-    hook = BigtableHook(
-        gcp_conn_id='google_cloud_default',
+    hook = BigtableHook(gcp_conn_id='google_cloud_default')
+    instance = hook.get_instance(
         project_id='price-intel-prod',
         instance_id='price-intelligence'
     )
-    client = hook.get_client()
-    instance = client.instance('price-intelligence')
     table = instance.table('product_prices')
     
     rows = []
@@ -77,8 +80,13 @@ def write_bigtable(**context):
         rows.append(row)
         
     # Write events batch
-    status = table.mutate_rows(rows)
-    success_count = sum(1 for s in status if s.code == 0)
+    BATCH_SIZE = 500
+    success_count = 0
+    for i in range(0, len(rows), BATCH_SIZE):
+        batch = rows[i:i + BATCH_SIZE]
+        status = table.mutate_rows(batch)
+        success_count += sum(1 for s in status if s.code == 0)
+        print(f"Batch {i//BATCH_SIZE + 1}: {success_count} rows written so far")
     
     ti.xcom_push(key='bigtable_count', value=success_count)
 
