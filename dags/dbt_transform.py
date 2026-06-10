@@ -19,7 +19,7 @@ with DAG(
     dag_id='dbt_transform',
     default_args=default_args,
     description='Runs dbt transformations after scraping is done',
-    schedule_interval='0 */6 * * *',
+    schedule_interval='0 */12 * * *',
     start_date=datetime(2026, 5, 1),
     catchup=False,
     is_paused_upon_creation=True,
