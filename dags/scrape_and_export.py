@@ -55,8 +55,6 @@ with DAG(
         env=SHARED_ENV,
     )
 
-    # Electroplanet est protégé par Cloudflare — headless Docker est bloqué.
-    # On lance le spider via SSH sur l'hôte WSL où --headless=old passe Cloudflare.
     scrape_ep = BashOperator(
         task_id='scrape_ep',
         bash_command=(
@@ -65,6 +63,7 @@ with DAG(
             f'{WSL_USER}@{WSL_HOST} '
             f'"cd ~/price-intelligence && '
             f'MONGO_HOST=localhost '
+            f'MONGO_URI=mongodb://price_app:AppPass2026!@localhost:27017/price_db '
             f'KAFKA_BOOTSTRAP_SERVERS=localhost:9092 '
             f'SCRAPY_FEED_DIR=/home/sara/price-intelligence/storage '
             f'venv/bin/scrapy crawl electroplanet '
