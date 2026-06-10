@@ -36,9 +36,10 @@ with DAG(
     dag_id='scrape_and_export',
     default_args=default_args,
     description='Scrapes Jumia and Electroplanet then exports to GCS',
-    schedule_interval='0 */6 * * *',
+    schedule_interval='0 */12 * * *',
     start_date=datetime(2026, 5, 1),
     catchup=False,
+    dagrun_timeout=timedelta(hours=2),
     is_paused_upon_creation=True,
     tags=['scraping', 'ingestion'],
 ) as dag:
@@ -48,7 +49,7 @@ with DAG(
         bash_command=(
             'cd $PRICE_INTEL_HOME && '
             '~/.local/bin/scrapy crawl jumia '
-            '-s CLOSESPIDER_ITEMCOUNT=500 '
+            '-s CLOSESPIDER_PAGECOUNT=300 '
             '--set=SCRAPY_SETTINGS_MODULE=scrapers.settings'
         ),
         env=SHARED_ENV,
