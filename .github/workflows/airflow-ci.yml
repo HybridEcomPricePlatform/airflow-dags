@@ -42,15 +42,16 @@ jobs:
       - name: Create mock scrapers module
         run: |
           mkdir -p /tmp/scrapers/utils
+          mkdir -p /tmp/scrapers/spiders
           touch /tmp/scrapers/__init__.py
           touch /tmp/scrapers/utils/__init__.py
+          touch /tmp/scrapers/spiders/__init__.py
           cat > /tmp/scrapers/utils/export_to_gcs.py << 'EOF'
           def export_recent_files(**kwargs):
-              print("Mock export_to_gcs for CI")
               return 0
           EOF
           echo "✔ Mock scrapers module created"
-
+          
       - name: Check DAG imports
         run: |
           export AIRFLOW_HOME=/tmp/airflow
