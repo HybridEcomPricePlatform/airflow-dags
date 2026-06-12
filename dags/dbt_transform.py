@@ -18,12 +18,12 @@ default_args = {
 with DAG(
     dag_id='dbt_transform',
     default_args=default_args,
-    description='Runs dbt transformations after scraping is done',
+    description='Runs dbt transformations then analytics notebooks',
     schedule_interval='0 */12 * * *',
     start_date=datetime(2026, 5, 1),
     catchup=False,
     is_paused_upon_creation=True,
-    tags=['transformation', 'dbt', 'bigquery'],
+    tags=['transformation', 'dbt', 'bigquery', 'analytics'],
 ) as dag:
 
     wait_for_scraping = ExternalTaskSensor(
@@ -37,7 +37,6 @@ with DAG(
         timeout=3600,
     )
 
-    # dbt runs via SSH on WSL host where credentials and venv are available
     run_dbt = BashOperator(
         task_id='run_dbt',
         bash_command=(
@@ -50,4 +49,21 @@ with DAG(
         ),
     )
 
-    wait_for_scraping >> run_dbt
+    run_analytics = BashOperator(
+        task_id='run_all_analytics_notebooks',
+        bash_command=(
+            f'ssh -i {SSH_KEY} '
+            f'-o StrictHostKeyChecking=no -T '
+            f'{WSL_USER}@{WSL_HOST} '
+            f'"cd ~/price-intelligence/analytics && '
+            f'GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/application_default_credentials.json '
+            f'source ~/price-intelligence/venv/bin/activate && '
+            f'python scripts/run_notebook.py '
+            f'--project-id price-intel-prod '
+            f'--dataset-id price_staging '
+            f'--run-date {{{{ ds }}}} '
+            f'--output-dir reports 2>&1"'
+        ),
+    )
+
+    wait_for_scraping >> run_dbt >> run_analytics
