@@ -79,13 +79,25 @@ with DAG(
         env=SHARED_ENV,
     )
 
-    wait_nifi_completion = HttpSensor(
+    wait_nifi_completion = BashOperator(
         task_id='wait_nifi_completion',
-        http_conn_id='nifi_api',
-        endpoint='nifi-api/flow/process-groups/root/status',
-        response_check=lambda response: response.json().get('processGroupStatus', {}).get('aggregateSnapshot', {}).get('queuedCount') == 0,
-        poke_interval=60,
-        timeout=3600,
+        bash_command=(
+            'NIFI_IP=$(getent hosts nifi | awk \'{print $1}\') && '
+            'TOKEN=$(curl -k -s -X POST '
+            'https://$NIFI_IP:8443/nifi-api/access/token '
+            '-H "Content-Type: application/x-www-form-urlencoded" '
+            '-d "username=admin&password=adminpassword123") && '
+            'QUEUED=$(curl -k -s '
+            '-H "Authorization: Bearer $TOKEN" '
+            'https://$NIFI_IP:8443/nifi-api/flow/process-groups/root/status '
+            '| python3 -c "import sys,json; d=json.load(sys.stdin); '
+            'print(d[\'processGroupStatus\'][\'aggregateSnapshot\'][\'flowFilesQueued\'])") && '
+            'echo "NiFi queued: $QUEUED" && '
+            '[ "$QUEUED" = "0" ]'
+        ),
+        env=SHARED_ENV,
+        retries=10,
+        retry_delay=timedelta(seconds=30),
     )
 
     [scrape_jumia, scrape_ep] >> export_to_gcs >> wait_nifi_completion
