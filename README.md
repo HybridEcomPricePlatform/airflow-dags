@@ -32,7 +32,7 @@ docker compose up -d airflow-webserver airflow-scheduler airflow-worker
 {
   "KAFKA_BROKER": "kafka:9092",
   "KAFKA_TOPIC": "price-updates",
-  "MONGO_URI": "mongodb://price_app:AppPass2026!@mongo:27017/price_db",
+  "MONGO_URI": "mongodb://price_app:AppPass2026!@price-mongodb:27017/price_db",
   "GOOGLE_CLOUD_PROJECT": "price-intel-prod",
   "GCS_BUCKET": "price-raw-data-price-intel-prod"
 }
