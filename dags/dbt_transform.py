@@ -49,6 +49,19 @@ with DAG(
         ),
     )
 
+    run_ge = BashOperator(
+        task_id='validate_great_expectations',
+        bash_command=(
+            f'ssh -i {SSH_KEY} '
+            f'-o StrictHostKeyChecking=no -T '
+            f'{WSL_USER}@{WSL_HOST} '
+            f'"cd ~/price-intelligence && '
+            f'GOOGLE_APPLICATION_CREDENTIALS=~/price-intelligence/price-key.json '
+            f'GOOGLE_CLOUD_PROJECT=price-intel-prod '
+            f'source ~/price-intelligence/venv/bin/activate && '
+            f'python great_expectations/scripts/run_validation.py 2>&1"'
+        ),
+    )
     run_analytics = BashOperator(
         task_id='run_all_analytics_notebooks',
         bash_command=(
@@ -66,4 +79,4 @@ with DAG(
         ),
     )
 
-    wait_for_scraping >> run_dbt >> run_analytics
+    wait_for_scraping >> run_dbt >> run_ge >> run_analytics
