@@ -1,6 +1,6 @@
 {
     "KAFKA_BROKER": "kafka:9092",
-    "KAFKA_TOPIC": "price_events",
+    "KAFKA_TOPIC": "price-updates",
     "MONGO_URI": "mongodb://mongo:27017/",
     "MONGO_DATABASE": "price_db",
     "GOOGLE_CLOUD_PROJECT": "price-intel-prod",
