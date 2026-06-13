@@ -94,6 +94,8 @@ airflow-dags/
 
 `wait_nifi_completion` uses `BashOperator` with `curl` — not `HttpSensor` — because NiFi requires Bearer token authentication and presents a self-signed TLS certificate. `getent hosts nifi` resolves the container IP dynamically so no hardcoded IP is needed.
 
+![scrape_and_export DAG graph](docs/images/dag_scrape_and_export.png)
+
 ### `dbt_transform` · Every 12 hours (after `scrape_and_export`)
 
 | Task | Type | Notes |
@@ -105,9 +107,13 @@ airflow-dags/
 
 GE runs as a hard gate: if any expectation fails, the DAG stops before analytics notebooks execute.
 
+![dbt_transform DAG graph](docs/images/dag_dbt_transform.png)
+
 ### `jumia_ratings_enrichment` · Mondays 02:00
 
 One-shot enrichment spider. Reads Jumia product URLs from MongoDB where `rating` is absent, visits each product page, and updates `rating` + `review_count` via MongoDB `$set`. Last run: 817 URLs, 4,636 documents enriched.
+
+![jumia_ratings_enrichment DAG graph](docs/images/dag_jumia_ratings_enrichment.png)
 
 ### `mongo_to_bigtable` · Manual
 
@@ -116,6 +122,8 @@ Batch-loads MongoDB documents to Cloud Bigtable. One-shot already executed — k
 - Filter: `scraped_at >= '2026-05-01'` (pre-May data excluded — contained pipeline bugs)
 - Batch size: 500 rows per `mutate_rows` call
 - Result: 12,750 rows in Bigtable
+
+![mongo_to_bigtable DAG graph](docs/images/dag_mongo_to_bigtable.png)
 
 ---
 
