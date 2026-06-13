@@ -82,6 +82,7 @@ with DAG(
     wait_nifi_completion = BashOperator(
         task_id='wait_nifi_completion',
         bash_command=(
+            'sleep 180 && '
             'NIFI_IP=$(getent hosts nifi | awk \'{print $1}\') && '
             'TOKEN=$(curl -k -s -X POST '
             'https://$NIFI_IP:8443/nifi-api/access/token '
@@ -96,8 +97,8 @@ with DAG(
             '[ "$QUEUED" = "0" ]'
         ),
         env=SHARED_ENV,
-        retries=10,
-        retry_delay=timedelta(seconds=30),
+        retries=15,
+        retry_delay=timedelta(minutes=2),
     )
 
     [scrape_jumia, scrape_ep] >> export_to_gcs >> wait_nifi_completion

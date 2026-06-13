@@ -14,7 +14,7 @@ DATASET    = "price_staging"
 TABLE      = "clean_prices"
 KEY_PATH   = os.getenv(
     "GOOGLE_APPLICATION_CREDENTIALS",
-    os.path.expanduser("~/.config/gcloud/application_default_credentials.json")
+    os.path.expanduser("~/price-intelligence/price-key.json")
 )
 
 connection_string = (
